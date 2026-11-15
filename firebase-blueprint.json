@@ -1,0 +1,429 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated learner profile, preferences, daily goals, and streak counters.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "targetLevel": {
+          "type": "string",
+          "enum": ["B1", "B2", "C1", "C2"]
+        },
+        "dailyGoal": {
+          "type": "integer"
+        },
+        "region": {
+          "type": "string",
+          "enum": ["IN", "INTL"]
+        },
+        "streak": {
+          "type": "integer"
+        },
+        "longestStreak": {
+          "type": "integer"
+        },
+        "lastActiveDate": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "xp": {
+          "type": "integer"
+        },
+        "wordsLearnedToday": {
+          "type": "integer"
+        },
+        "dailyStatsDate": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "flashcardsUsedToday": {
+          "type": "integer"
+        },
+        "quizzesUsedToday": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "targetLevel",
+        "dailyGoal",
+        "region",
+        "streak",
+        "longestStreak",
+        "lastActiveDate",
+        "xp",
+        "wordsLearnedToday",
+        "dailyStatsDate",
+        "flashcardsUsedToday",
+        "quizzesUsedToday",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WordProgress": {
+      "title": "WordProgress",
+      "description": "Spaced-repetition mastery record for a vocabulary word.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "wordId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "learning", "mastered", "needs_review"]
+        },
+        "easeFactor": {
+          "type": "number"
+        },
+        "intervalDays": {
+          "type": "integer"
+        },
+        "repetitions": {
+          "type": "integer"
+        },
+        "correctCount": {
+          "type": "integer"
+        },
+        "mistakeCount": {
+          "type": "integer"
+        },
+        "nextReviewAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "lastReviewedAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "wordId",
+        "status",
+        "easeFactor",
+        "intervalDays",
+        "repetitions",
+        "correctCount",
+        "mistakeCount",
+        "nextReviewAt",
+        "lastReviewedAt",
+        "updatedAt"
+      ]
+    },
+    "VocabCollection": {
+      "title": "VocabCollection",
+      "description": "User-created custom vocabulary list.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "collectionId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "color": {
+          "type": "string",
+          "enum": ["indigo", "emerald", "amber", "rose", "sky"]
+        },
+        "wordIds": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "collectionId",
+        "name",
+        "description",
+        "color",
+        "wordIds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "QuizAttempt": {
+      "title": "QuizAttempt",
+      "description": "Completed vocabulary quiz score and missed words.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["meaning", "context", "synonym", "mistake_clinic"]
+        },
+        "score": {
+          "type": "integer"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "accuracy": {
+          "type": "integer"
+        },
+        "xpEarned": {
+          "type": "integer"
+        },
+        "missedWordIds": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "mode",
+        "score",
+        "total",
+        "accuracy",
+        "xpEarned",
+        "missedWordIds",
+        "createdAt"
+      ]
+    },
+    "AiStory": {
+      "title": "AiStory",
+      "description": "Gemini-generated contextual story incorporating target vocabulary words.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "genre": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "level": {
+          "type": "string",
+          "enum": ["B1", "B2", "C1", "C2"]
+        },
+        "content": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 8000
+        },
+        "targetWords": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "title",
+        "genre",
+        "level",
+        "content",
+        "targetWords",
+        "createdAt"
+      ]
+    },
+    "CourseProgress": {
+      "title": "CourseProgress",
+      "description": "Progress across structured premium vocabulary courses.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "courseId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 64
+        },
+        "completedModules": {
+          "type": "array"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "courseId",
+        "completedModules",
+        "updatedAt"
+      ]
+    },
+    "DailyActivity": {
+      "title": "DailyActivity",
+      "description": "Daily learning rollup for weekly activity charts.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "dateKey": {
+          "type": "string",
+          "pattern": "^[0-9-]+$",
+          "maxLength": 16
+        },
+        "wordsReviewed": {
+          "type": "integer"
+        },
+        "quizzesCompleted": {
+          "type": "integer"
+        },
+        "xpEarned": {
+          "type": "integer"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "dateKey",
+        "wordsReviewed",
+        "quizzesCompleted",
+        "xpEarned",
+        "updatedAt"
+      ]
+    },
+    "SubscriptionRecord": {
+      "title": "SubscriptionRecord",
+      "description": "Server-authoritative subscription state (read-only on client).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 128
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "premium"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["inactive", "active", "cancelled", "past_due"]
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["none", "razorpay", "stripe"]
+        },
+        "currentPeriodEnd": {
+          "type": "string",
+          "maxLength": 40
+        }
+      },
+      "required": [
+        "uid",
+        "tier",
+        "status",
+        "provider",
+        "currentPeriodEnd"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private learner profile document owned by userId."
+    },
+    "/users/{userId}/wordProgress/{wordId}": {
+      "schema": { "$ref": "#/entities/WordProgress" },
+      "description": "Learner spaced repetition state for each vocabulary word."
+    },
+    "/users/{userId}/collections/{collectionId}": {
+      "schema": { "$ref": "#/entities/VocabCollection" },
+      "description": "Custom vocabulary collections created by the learner."
+    },
+    "/users/{userId}/quizAttempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/QuizAttempt" },
+      "description": "Quiz attempt logs for analytics and mistake clinic."
+    },
+    "/users/{userId}/stories/{storyId}": {
+      "schema": { "$ref": "#/entities/AiStory" },
+      "description": "Saved Gemini-generated vocabulary stories."
+    },
+    "/users/{userId}/courseProgress/{courseId}": {
+      "schema": { "$ref": "#/entities/CourseProgress" },
+      "description": "Completed modules per vocabulary course."
+    },
+    "/users/{userId}/dailyActivity/{dateKey}": {
+      "schema": { "$ref": "#/entities/DailyActivity" },
+      "description": "Daily learning statistics keyed by YYYY-MM-DD."
+    },
+    "/users/{userId}/billing/subscription": {
+      "schema": { "$ref": "#/entities/SubscriptionRecord" },
+      "description": "Server-managed subscription status (client read-only)."
+    }
+  }
+}

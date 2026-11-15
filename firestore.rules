@@ -1,0 +1,318 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Pillar 4.1: Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidStringArray(arr, maxLen) {
+      return arr is list
+        && arr.size() <= maxLen
+        && (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 64));
+    }
+
+    // Entity Validators
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'displayName', 'email', 'targetLevel', 'dailyGoal',
+          'region', 'streak', 'longestStreak', 'lastActiveDate',
+          'xp', 'wordsLearnedToday', 'dailyStatsDate',
+          'flashcardsUsedToday', 'quizzesUsedToday', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'displayName', 'email', 'targetLevel', 'dailyGoal',
+          'region', 'streak', 'longestStreak', 'lastActiveDate',
+          'xp', 'wordsLearnedToday', 'dailyStatsDate',
+          'flashcardsUsedToday', 'quizzesUsedToday', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && data.email is string && data.email.size() <= 160
+        && data.targetLevel in ['B1', 'B2', 'C1', 'C2']
+        && data.dailyGoal is int && data.dailyGoal >= 5 && data.dailyGoal <= 50
+        && data.region in ['IN', 'INTL']
+        && data.streak is int && data.streak >= 0 && data.streak <= 10000
+        && data.longestStreak is int && data.longestStreak >= 0 && data.longestStreak <= 10000
+        && data.lastActiveDate is string && data.lastActiveDate.size() <= 16
+        && data.xp is int && data.xp >= 0 && data.xp <= 10000000
+        && data.wordsLearnedToday is int && data.wordsLearnedToday >= 0 && data.wordsLearnedToday <= 1000
+        && data.dailyStatsDate is string && data.dailyStatsDate.size() <= 16
+        && data.flashcardsUsedToday is int && data.flashcardsUsedToday >= 0 && data.flashcardsUsedToday <= 1000
+        && data.quizzesUsedToday is int && data.quizzesUsedToday >= 0 && data.quizzesUsedToday <= 500
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidWordProgress(data, userId, wordId) {
+      return data.keys().hasAll([
+          'uid', 'wordId', 'status', 'easeFactor', 'intervalDays',
+          'repetitions', 'correctCount', 'mistakeCount',
+          'nextReviewAt', 'lastReviewedAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'wordId', 'status', 'easeFactor', 'intervalDays',
+          'repetitions', 'correctCount', 'mistakeCount',
+          'nextReviewAt', 'lastReviewedAt', 'updatedAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.wordId == wordId
+        && data.status in ['new', 'learning', 'mastered', 'needs_review']
+        && (data.easeFactor is float || data.easeFactor is int)
+        && data.easeFactor >= 1.3 && data.easeFactor <= 5.0
+        && data.intervalDays is int && data.intervalDays >= 0 && data.intervalDays <= 3650
+        && data.repetitions is int && data.repetitions >= 0 && data.repetitions <= 10000
+        && data.correctCount is int && data.correctCount >= 0 && data.correctCount <= 100000
+        && data.mistakeCount is int && data.mistakeCount >= 0 && data.mistakeCount <= 100000
+        && data.nextReviewAt is string && data.nextReviewAt.size() <= 40
+        && data.lastReviewedAt is string && data.lastReviewedAt.size() <= 40
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidVocabCollection(data, userId, collectionId) {
+      return data.keys().hasAll([
+          'uid', 'collectionId', 'name', 'description', 'color',
+          'wordIds', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'collectionId', 'name', 'description', 'color',
+          'wordIds', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.collectionId == collectionId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 60
+        && data.description is string && data.description.size() <= 200
+        && data.color in ['indigo', 'emerald', 'amber', 'rose', 'sky']
+        && isValidStringArray(data.wordIds, 200)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidQuizAttempt(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'mode', 'score', 'total', 'accuracy',
+          'xpEarned', 'missedWordIds', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'mode', 'score', 'total', 'accuracy',
+          'xpEarned', 'missedWordIds', 'createdAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.mode in ['meaning', 'context', 'synonym', 'mistake_clinic']
+        && data.score is int && data.score >= 0 && data.score <= 50
+        && data.total is int && data.total >= 1 && data.total <= 50
+        && data.score <= data.total
+        && data.accuracy is int && data.accuracy >= 0 && data.accuracy <= 100
+        && data.xpEarned is int && data.xpEarned >= 0 && data.xpEarned <= 5000
+        && isValidStringArray(data.missedWordIds, 25)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidAiStory(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'title', 'genre', 'level', 'content', 'targetWords', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'title', 'genre', 'level', 'content', 'targetWords', 'createdAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.genre is string && data.genre.size() >= 1 && data.genre.size() <= 40
+        && data.level in ['B1', 'B2', 'C1', 'C2']
+        && data.content is string && data.content.size() >= 10 && data.content.size() <= 8000
+        && isValidStringArray(data.targetWords, 12)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCourseProgress(data, userId, courseId) {
+      return data.keys().hasAll([
+          'uid', 'courseId', 'completedModules', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'courseId', 'completedModules', 'updatedAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.courseId == courseId
+        && isValidStringArray(data.completedModules, 20)
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDailyActivity(data, userId, dateKey) {
+      return data.keys().hasAll([
+          'uid', 'dateKey', 'wordsReviewed', 'quizzesCompleted', 'xpEarned', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'dateKey', 'wordsReviewed', 'quizzesCompleted', 'xpEarned', 'updatedAt'
+        ])
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.dateKey == dateKey
+        && data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.wordsReviewed is int && data.wordsReviewed >= 0 && data.wordsReviewed <= 1000
+        && data.quizzesCompleted is int && data.quizzesCompleted >= 0 && data.quizzesCompleted <= 500
+        && data.xpEarned is int && data.xpEarned >= 0 && data.xpEarned <= 50000
+        && data.updatedAt is timestamp;
+    }
+
+    // User Profile & Subcollections
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'email', 'targetLevel', 'dailyGoal', 'region',
+          'streak', 'longestStreak', 'lastActiveDate', 'xp',
+          'wordsLearnedToday', 'dailyStatsDate', 'flashcardsUsedToday',
+          'quizzesUsedToday', 'updatedAt'
+        ]);
+      allow delete: if false;
+
+      match /wordProgress/{wordId} {
+        allow get: if isValidId(userId) && isValidId(wordId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(wordId)
+          && isOwner(userId)
+          && isValidWordProgress(incoming(), userId, wordId)
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(wordId)
+          && isOwner(userId)
+          && isValidWordProgress(incoming(), userId, wordId)
+          && incoming().uid == existing().uid
+          && incoming().wordId == existing().wordId
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'easeFactor', 'intervalDays', 'repetitions',
+            'correctCount', 'mistakeCount', 'nextReviewAt',
+            'lastReviewedAt', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(wordId) && isOwner(userId);
+      }
+
+      match /collections/{collectionId} {
+        allow get: if isValidId(userId) && isValidId(collectionId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(collectionId)
+          && isOwner(userId)
+          && isValidVocabCollection(incoming(), userId, collectionId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(collectionId)
+          && isOwner(userId)
+          && isValidVocabCollection(incoming(), userId, collectionId)
+          && incoming().uid == existing().uid
+          && incoming().collectionId == existing().collectionId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'description', 'color', 'wordIds', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(collectionId) && isOwner(userId);
+      }
+
+      match /quizAttempts/{attemptId} {
+        allow get: if isValidId(userId) && isValidId(attemptId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(attemptId)
+          && isOwner(userId)
+          && isValidQuizAttempt(incoming(), userId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(attemptId) && isOwner(userId);
+      }
+
+      match /stories/{storyId} {
+        allow get: if isValidId(userId) && isValidId(storyId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(storyId)
+          && isOwner(userId)
+          && isValidAiStory(incoming(), userId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(storyId) && isOwner(userId);
+      }
+
+      match /courseProgress/{courseId} {
+        allow get: if isValidId(userId) && isValidId(courseId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(courseId)
+          && isOwner(userId)
+          && isValidCourseProgress(incoming(), userId, courseId)
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(courseId)
+          && isOwner(userId)
+          && isValidCourseProgress(incoming(), userId, courseId)
+          && incoming().uid == existing().uid
+          && incoming().courseId == existing().courseId
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'completedModules', 'updatedAt'
+          ]);
+        allow delete: if false;
+      }
+
+      match /dailyActivity/{dateKey} {
+        allow get: if isValidId(userId) && isValidId(dateKey) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(dateKey)
+          && isOwner(userId)
+          && isValidDailyActivity(incoming(), userId, dateKey)
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(dateKey)
+          && isOwner(userId)
+          && isValidDailyActivity(incoming(), userId, dateKey)
+          && incoming().uid == existing().uid
+          && incoming().dateKey == existing().dateKey
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'wordsReviewed', 'quizzesCompleted', 'xpEarned', 'updatedAt'
+          ]);
+        allow delete: if false;
+      }
+
+      // Server-authoritative subscription status: client can read only, never write
+      match /billing/subscription {
+        allow get: if isValidId(userId) && isOwner(userId);
+        allow list: if false;
+        allow write: if false;
+      }
+    }
+  }
+}

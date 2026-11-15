@@ -1,0 +1,8 @@
+{
+  "name": "VocabFlow",
+  "description": "AI-powered English vocabulary learning platform with interactive flashcards, adaptive quizzes, spaced repetition, Gemini AI stories, and Razorpay/Stripe subscription billing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
